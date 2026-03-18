@@ -95,15 +95,15 @@ class MyDB(ABC):
         `None`.
         """
         # TODO
-        if key not in self.db:
-            return None
-        
-        if field not in self.db[key]:
+        if key not in self.db or field not in self.db[key]:
             return None
         
         return self.db[key][field]['value']
     
     def find_median(self):
+
+        if not self.db: 
+            return None
 
         sorted_by_age = sorted(self.db.items(), key=lambda field: field['value'])
 
