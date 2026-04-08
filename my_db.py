@@ -10,8 +10,10 @@ class MyDB(ABC):
     """
 
     def __init__(self):
-        self.db: dict[str, dict[str, int]] = {}
-        # to add timestamp later { key { field: (value, timestamp) } } or import dataclasses and create a Record class
+        self.db: dict[str, dict[str, dict[str, int]]] = {}
+        # to add timestamp later { key { field: (value, timestamp) } } # * These design notes are useful for interviewers to see
+        # or import dataclasses and create a Record class
+        # versioned structure would be: field -> [(timestamp, value), (timestamp, value), ...], sorted by timestamp, then get() to access the latest version
 
      
     def set(self, timestamp: int, key: str, field: str, value: int) -> None:
@@ -29,17 +31,17 @@ class MyDB(ABC):
              "timestamp" : timestamp   
         } 
 
-        if key in self.db:
-            self.db[key][field] = record
-        else:
-            self.db[key] = {}
-            self.db[key][field] = record
-            self.db[key][field] = {
-            "value" : value,
-             "timestamp" : timestamp   
-        } 
+        self.db.setdefault(key, {})[field] = record
 
-        # setdefault() works for this: self.db.setdefault(key, {})[field] = value
+
+        # if key in self.db:
+        #     self.db[key][field] = field
+        # else:
+        #     self.db[key] = {}
+        #     self.db[key][field] = {
+        #     "value" : value,
+        #      "timestamp" : timestamp   
+        # } 
 
 
     def compare_and_set(self, timestamp: int, key: str, field: str, expected_value: int, new_value: int) -> bool:
@@ -100,20 +102,26 @@ class MyDB(ABC):
         
         return self.db[key][field]['value']
     
+    
     def find_median(self):
-
         if not self.db: 
             return None
 
-        sorted_by_age = sorted(self.db.items(), key=lambda field: field['value'])
+        # sorted_by_age = sorted(self.db.items(), key=lambda field: field["value"]) 
+
+        sorted_by_age = sorted(
+            field["value"]
+            for key_data in self.db.values() # loops through the key-value pairs {"name": {"age": 20, "timestamp": 1600001 }}
+            for field in key_data.values() # loops through the "values" in the key-values pairs, i.e the nested dict {"age": 20, "timestamp": 1600001 }
+            )
 
         length = len(sorted_by_age)
-        median_age = length // 2
+        median_age = length // 2 
 
         if length % 2 == 1:
-            return sorted_by_age[median_age]
+            return sorted_by_age[median_age] 
         else: 
-            return sorted_by_age[median_age - 1]
+            return sorted_by_age[median_age - 1] 
     
 
     
